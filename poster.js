@@ -32,7 +32,8 @@ let stats = {
   createdPosts: 0,
   skippedPosts: 0,
   failedPosts: 0,
-  duplicatePosts: 0
+  duplicatePosts: 0,
+  imageFailedPosts: 0  // New stat for posts skipped due to image upload failure
 };
 
 const wpApi = axios.create({
@@ -182,27 +183,35 @@ async function createPost(postData, index) {
       return null;
     }
     
-    let featured_media = null;
-    
+    // Check if the post has an image to upload
     if (postData.Picture) {
-      featured_media = await uploadImage(postData.Picture, title);
+      const featured_media = await uploadImage(postData.Picture, title);
       if (!featured_media) {
-        console.log(`⚠️ [${index+1}/${stats.totalPosts}] Proceeding without featured image`);
+        // Skip post creation if image upload fails
+        console.log(`⚠️ [${index+1}/${stats.totalPosts}] Skipping: Featured image upload failed`);
+        stats.imageFailedPosts++;
+        return null;
       }
+      
+      // Only proceed with post creation if image was successfully uploaded
+      const postContent = {
+        title: title,
+        content: insertAds(description),
+        status: 'publish',
+        featured_media: featured_media,
+        categories: [UNCATEGORIZED_CATEGORY_ID]
+      };
+      
+      const response = await wpApi.post('/wp/v2/posts', postContent);
+      stats.createdPosts++;
+      console.log(`✅ [${index+1}/${stats.totalPosts}] Created: "${title}"`);
+      return response.data;
+    } else {
+      // Skip post creation if there's no image
+      console.log(`⏭ [${index+1}/${stats.totalPosts}] Skipping: No featured image provided`);
+      stats.skippedPosts++;
+      return null;
     }
-    
-    const postContent = {
-      title: title,
-      content: insertAds(description),
-      status: 'publish',
-      featured_media: featured_media,
-      categories: [UNCATEGORIZED_CATEGORY_ID] // Set category to Uncategorized
-    };
-    
-    const response = await wpApi.post('/wp/v2/posts', postContent);
-    stats.createdPosts++;
-    console.log(`✅ [${index+1}/${stats.totalPosts}] Created: "${title}"`);
-    return response.data;
   } catch (error) {
     stats.failedPosts++;
     console.error(`❌ [${index+1}/${stats.totalPosts}] Error:`, error.response?.data || error.message);
@@ -218,8 +227,9 @@ function logStats() {
   console.log(`├── Created: ${stats.createdPosts}`);
   console.log(`├── Skipped: ${stats.skippedPosts}`);
   console.log(`├── Duplicates: ${stats.duplicatePosts}`);
+  console.log(`├── Image Failed: ${stats.imageFailedPosts}`);  // Display the new stat
   console.log(`├── Failed: ${stats.failedPosts}`);
-  console.log(`└── Progress: ${Math.round((stats.createdPosts + stats.skippedPosts + stats.duplicatePosts + stats.failedPosts) / stats.totalPosts * 100)}%`);
+  console.log(`└── Progress: ${Math.round((stats.createdPosts + stats.skippedPosts + stats.duplicatePosts + stats.imageFailedPosts + stats.failedPosts) / stats.totalPosts * 100)}%`);
 }
 
 async function processJSON() {
