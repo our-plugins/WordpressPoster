@@ -122,14 +122,12 @@ async function removePostsWithoutFeaturedImages() {
     
     // SAFETY FEATURE: This deletion code is commented out by default
     // Uncomment the following code block when you're ready to delete the posts
-    /*
     console.log('\n🔄 Deleting posts...');
     for (const post of postsWithoutImages) {
       await deletePost(post.id, post.title.rendered);
       // Small delay to avoid overwhelming the server
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
-    */
     
     console.log('\n✅ Process completed!');
     logStats();
