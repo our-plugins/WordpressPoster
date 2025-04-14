@@ -6,7 +6,7 @@ const WORDPRESS_URL = 'https://uprecipes.blog/wp-json';
 const USERNAME = 'Emma Harlow';
 const PASSWORD = 'jtrD lQPs eqsF xNeO tcun G4bq';
 const UNCATEGORIZED_CATEGORY_ID = 1;
-const POSTS_TO_FETCH = 30;
+const POSTS_TO_FETCH = 45;
 const DESCRIPTION_LENGTH = 100;
 
 // Create WordPress API client
