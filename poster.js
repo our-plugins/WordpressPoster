@@ -12,19 +12,7 @@ const JSON_FILE_PATH = './hlRecipesPosts.json';
 const UNCATEGORIZED_CATEGORY_ID = 1;
 
 // AdSense Code
-const ADSENSE_BLOCK = `<!-- wp:html -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5509961066897132"
-     crossorigin="anonymous"></script>
-<ins class="adsbygoogle"
-     style="display:block; text-align:center;"
-     data-ad-layout="in-article"
-     data-ad-format="fluid"
-     data-ad-client="ca-pub-5509961066897132"
-     data-ad-slot="2762560982"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
-<!-- /wp:html -->`;
+const ADSENSE_BLOCK = `<br>`;
 
 // Statistics
 let stats = {

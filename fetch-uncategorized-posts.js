@@ -6,8 +6,9 @@ const WORDPRESS_URL = 'https://uprecipes.blog/wp-json';
 const USERNAME = 'Emma Harlow';
 const PASSWORD = 'jtrD lQPs eqsF xNeO tcun G4bq';
 const UNCATEGORIZED_CATEGORY_ID = 1;
-const POSTS_TO_FETCH = 45;
+const POSTS_PER_PAGE = 60;
 const DESCRIPTION_LENGTH = 100;
+const PAGE = 3; // Set this to 1 for first batch, 2 for second batch, etc.
 
 // Create WordPress API client
 const wpApi = axios.create({
@@ -53,23 +54,30 @@ async function getImageUrl(mediaId) {
   }
 }
 
-// Function to get latest uncategorized posts
-async function getLatestUncategorizedPosts() {
+// Function to get paginated uncategorized posts
+async function getUncategorizedPosts() {
   try {
-    console.log(`🔍 Fetching latest ${POSTS_TO_FETCH} posts from Uncategorized category...`);
+    console.log(`🔍 Fetching ${POSTS_PER_PAGE} posts from page ${PAGE} (Uncategorized category)...`);
 
     const response = await wpApi.get('/wp/v2/posts', {
       params: {
         categories: UNCATEGORIZED_CATEGORY_ID,
-        per_page: POSTS_TO_FETCH,
+        per_page: POSTS_PER_PAGE,
+        page: PAGE,
         orderby: 'date',
         order: 'desc',
         _fields: 'id,title,featured_media,link,content'
       }
     });
+    
+    // Check for pagination headers
+    const totalPages = parseInt(response.headers['x-wp-totalpages'] || '1');
+    const totalPosts = parseInt(response.headers['x-wp-total'] || '0');
+    
+    console.log(`📊 Page ${PAGE} of ${totalPages} (Total posts: ${totalPosts})`);
 
     const posts = response.data;
-    console.log(`✅ Found ${posts.length} posts`);
+    console.log(`✅ Found ${posts.length} posts on this page`);
 
     const results = [];
 
@@ -126,15 +134,21 @@ async function getLatestUncategorizedPosts() {
 
     console.log(`📊 Stats: ${results.length} valid posts out of ${posts.length} total posts`);
 
-    fs.writeFileSync('uncategorized_posts.json', JSON.stringify(results, null, 2));
-    console.log('💾 Results saved to uncategorized_posts.json');
+    // Save with page number in filename
+    const filename = `uncategorized_posts_page${PAGE}.json`;
+    fs.writeFileSync(filename, JSON.stringify(results, null, 2));
+    console.log(`💾 Results saved to ${filename}`);
 
     return results;
   } catch (error) {
-    console.error('❌ Error fetching posts:', error.response?.data || error.message);
+    if (error.response?.status === 400) {
+      console.error(`❌ Error: Page ${PAGE} does not exist. Total pages available: ${error.response.headers['x-wp-totalpages'] || 'unknown'}`);
+    } else {
+      console.error('❌ Error fetching posts:', error.response?.data || error.message);
+    }
     return [];
   }
 }
 
 // Run the script
-getLatestUncategorizedPosts();
+getUncategorizedPosts();
